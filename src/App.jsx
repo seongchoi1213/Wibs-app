@@ -120,6 +120,20 @@ export default function App() {
   const [reqs,  setReqs]      = useState([]);
   const [logs,  setLogs]      = useState([]);
   const [cu,    setCu]        = useState(null);
+  const [loaded, setLoaded]   = useState(false);
+
+  useEffect(() => {
+    const qReqs = query(collection(db, "reqs"), orderBy("id", "desc"));
+    const unsubReqs = onSnapshot(qReqs, (snap) => {
+      setReqs(snap.docs.map(d => d.data()));
+    });
+    const unsubLogs = onSnapshot(collection(db, "logs"), (snap) => {
+      setLogs(snap.docs.map(d => d.data()).sort((a,b) => b.time.localeCompare(a.time)));
+    });
+    setLoaded(true);
+    return () => { unsubReqs(); unsubLogs(); };
+  }, []);
+ 
   const [loginInput, setLoginInput] = useState({name:"", pw:""});
   const [loginErr,   setLoginErr]   = useState("");
   const [tab,   setTab]       = useState("home");
