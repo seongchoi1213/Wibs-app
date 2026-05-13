@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { db } from "./firebase";
-import { collection, addDoc, onSnapshot, query, orderBy } from "firebase/firestore";
+import { collection, addDoc, onSnapshot, query, orderBy, getDocs, updateDoc, doc } from "firebase/firestore";
 const INIT_USERS = [
   { id:"u00", name:"이경수", role:"부장",  jisa:"본사",      phone:"010-2110-7522", region:null,                   managerId:null,  joinDate:"" },
   { id:"u01", name:"전병준", role:"차장",  jisa:"중부지사",  phone:"010-2241-3646", region:"중부지사",              managerId:"u00", joinDate:"" },
@@ -208,10 +208,14 @@ export default function App() {
     setDoneMsg("신청이 완료됐어요!"); setTimeout(() => { setDoneMsg(""); setTab("home"); }, 1200);
   }
 
-  function handleApprove(req) {
-    if (cu.role==="과장") { setReqs(reqs.map(r => r.id===req.id ? {...r,step:"차장승인대기",history:[...r.history,{actor:cu.name,action:"과장승인"}]} : r)); addLog("APPROVE",`과장승인: ${cu.name}→${empById(req.empId).name}`); }
-    else if (cu.role==="차장") { setReqs(reqs.map(r => r.id===req.id ? {...r,step:"완료",history:[...r.history,{actor:cu.name,action:"차장승인"}]} : r)); addLog("APPROVE",`차장승인: ${cu.name}→${empById(req.empId).name}`); }
-    else if (cu.role==="부장") { setReqs(reqs.map(r => r.id===req.id ? {...r,step:"완료",history:[...r.history,{actor:cu.name,action:"부장승인"}]} : r)); addLog("APPROVE",`부장승인: ${cu.name}→${empById(req.empId).name}`); }
+  async function handleApprove(req) {
+    let updated;
+    if (cu.role==="과장") { updated={...req,step:"차장승인대기",history:[...req.history,{actor:cu.name,action:"과장승인"}]}; addLog("APPROVE",`과장승인: ${cu.name}→${empById(req.empId).name}`); }
+    else if (cu.role==="차장") { updated={...req,step:"완료",history:[...req.history,{actor:cu.name,action:"차장승인"}]}; addLog("APPROVE",`차장승인: ${cu.name}→${empById(req.empId).name}`); }
+    else if (cu.role==="부장") { updated={...req,step:"완료",history:[...req.history,{actor:cu.name,action:"부장승인"}]}; addLog("APPROVE",`부장승인: ${cu.name}→${empById(req.empId).name}`); }
+    const snap = await getDocs(query(collection(db,"reqs")));
+    const docRef = snap.docs.find(d=>d.data().id===req.id);
+    if (docRef) await updateDoc(doc(db,"reqs",docRef.id), updated);
     setModal(null);
   }
 
