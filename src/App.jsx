@@ -201,7 +201,8 @@ export default function App() {
     if (!form.from||!form.to||!reason) { setDoneMsg("모든 항목을 입력해 주세요."); return; }
     const days = Math.max(1, Math.round((new Date(form.to)-new Date(form.from))/86400000)+1);
     const step = initStep(cu, users);
-    setReqs([{id:"r"+Date.now(), empId:cu.id, type:"연차", from:form.from, to:form.to, days, reason, step, history:[]}, ...reqs]);
+    const newReq = {id:"r"+Date.now(), empId:cu.id, type:"연차", from:form.from, to:form.to, days, reason, step, history:[]};
+    addDoc(collection(db, "reqs"), newReq);
     addLog("APPLY", `휴가신청: ${cu.name} / ${days}일 / ${reason} → ${step}`);
     setForm({from:"",to:"",reasonType:"개인사유",reasonCustom:""});
     setDoneMsg("신청이 완료됐어요!"); setTimeout(() => { setDoneMsg(""); setTab("home"); }, 1200);
