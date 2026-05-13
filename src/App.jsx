@@ -1,5 +1,6 @@
 import { useState } from "react";
-
+import { db } from "./firebase";
+import { collection, addDoc, onSnapshot, query, orderBy } from "firebase/firestore";
 const INIT_USERS = [
   { id:"u00", name:"이경수", role:"부장",  jisa:"본사",      phone:"010-2110-7522", region:null,                   managerId:null,  joinDate:"" },
   { id:"u01", name:"전병준", role:"차장",  jisa:"중부지사",  phone:"010-2241-3646", region:"중부지사",              managerId:"u00", joinDate:"" },
