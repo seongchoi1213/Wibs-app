@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { db } from "./firebase";
-import { collection, addDoc, onSnapshot, query, orderBy, getDocs, updateDoc, doc } from "firebase/firestore";
+import { collection, addDoc, onSnapshot, query, orderBy, getDocs, updateDoc, doc, deleteDoc } from "firebase/firestore";
 const INIT_USERS = [
   { id:"u00", name:"이경수", role:"부장",  jisa:"본사",      phone:"010-2110-7522", region:null,                   managerId:null,  joinDate:"" },
   { id:"u01", name:"전병준", role:"차장",  jisa:"중부지사",  phone:"010-2241-3646", region:"중부지사",              managerId:"u00", joinDate:"" },
@@ -149,7 +149,8 @@ export default function App() {
   const usedDays = uid => reqs.filter(r => r.empId===uid && r.step==="완료").reduce((s,r) => s+r.days, 0);
 
   function addLog(type, msg) {
-    setLogs(prev => [{time: new Date().toLocaleTimeString("ko-KR"), type, msg}, ...prev].slice(0,100));
+    const log = {time: new Date().toLocaleTimeString("ko-KR"), type, msg};
+    addDoc(collection(db, "logs"), log);
   }
 
   function myPending(u) {
@@ -219,8 +220,11 @@ export default function App() {
     setModal(null);
   }
 
-  function handleReject(req, reason) {
-    setReqs(reqs.map(r => r.id===req.id ? {...r,step:"반려",history:[...r.history,{actor:cu.name,action:"반려",reason}]} : r));
+  async function handleReject(req, reason) {
+    const updated = {...req,step:"반려",history:[...req.history,{actor:cu.name,action:"반려",reason}]};
+    const snap = await getDocs(query(collection(db,"reqs")));
+    const docRef = snap.docs.find(d=>d.data().id===req.id);
+    if (docRef) await updateDoc(doc(db,"reqs",docRef.id), updated);
     addLog("REJECT",`반려: ${cu.name}→${empById(req.empId).name} / ${reason}`);
     setModal(null);
   }
@@ -780,9 +784,9 @@ export default function App() {
                 <div style={SC}>
                   <div style={{padding:"20px",display:"flex",flexDirection:"column",gap:12}}>
                     <div style={{fontSize:14,color:"#444",lineHeight:1.6}}>테스트 데이터를 초기화합니다.</div>
-                    <button onClick={()=>{setReqs([]); addLog("AUTH","[부장] 신청내역 초기화");}} style={{width:"100%",padding:"14px",background:"#FFF0F0",border:"1.5px solid #E53935",borderRadius:12,color:"#E53935",fontSize:14,fontWeight:600,cursor:"pointer"}}>📋 신청 내역 전체 초기화</button>
-                    <button onClick={()=>setLogs([])} style={{width:"100%",padding:"14px",background:"#FFF8E1",border:"1.5px solid #F57F17",borderRadius:12,color:"#F57F17",fontSize:14,fontWeight:600,cursor:"pointer"}}>🗒 시스템 로그 초기화</button>
-                    <button onClick={()=>{setReqs([]); setLogs([]); addLog("AUTH","[부장] 전체 초기화");}} style={{width:"100%",padding:"14px",background:"#222",border:"none",borderRadius:12,color:"#fff",fontSize:14,fontWeight:600,cursor:"pointer"}}>⚠️ 전체 초기화 (신청+로그)</button>
+                    <button onClick={async()=>{ const snap=await getDocs(collection(db,"reqs")); snap.docs.forEach(d=>deleteDoc(doc(db,"reqs",d.id))); addLog("AUTH","[부장] 신청내역 초기화");}} style={{width:"100%",padding:"14px",background:"#FFF0F0",border:"1.5px solid #E53935",borderRadius:12,color:"#E53935",fontSize:14,fontWeight:600,cursor:"pointer"}}>📋 신청 내역 전체 초기화</button>
+                    <button onClick={async()=>{ const snap=await getDocs(collection(db,"logs")); snap.docs.forEach(d=>deleteDoc(doc(db,"logs",d.id)));}} style={{width:"100%",padding:"14px",background:"#FFF8E1",border:"1.5px solid #F57F17",borderRadius:12,color:"#F57F17",fontSize:14,fontWeight:600,cursor:"pointer"}}>🗒 시스템 로그 초기화</button>
+                    <button onClick={async()=>{ const r=await getDocs(collection(db,"reqs")); r.docs.forEach(d=>deleteDoc(doc(db,"reqs",d.id))); const l=await getDocs(collection(db,"logs")); l.docs.forEach(d=>deleteDoc(doc(db,"logs",d.id))); addLog("AUTH","[부장] 전체 초기화");}} style={{width:"100%",padding:"14px",background:"#222",border:"none",borderRadius:12,color:"#fff",fontSize:14,fontWeight:600,cursor:"pointer"}}>⚠️ 전체 초기화 (신청+로그)</button>
                     <div style={{fontSize:12,color:"#BBB",textAlign:"center"}}>※ 인원 데이터는 초기화되지 않습니다.</div>
                   </div>
                 </div>
