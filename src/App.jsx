@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { db } from "./firebase";
 import { collection, addDoc, onSnapshot, query, orderBy, getDocs, updateDoc, doc, deleteDoc } from "firebase/firestore";
 const INIT_USERS = [
