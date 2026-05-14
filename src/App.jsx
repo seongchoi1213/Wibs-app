@@ -36,6 +36,7 @@ const INIT_USERS = [
   { id:"u53", name:"이선우", role:"대리",  jisa:"남부지사",  phone:"010-0000-6333", region:"대구경북",              managerId:"u12", joinDate:"2018-12-04" },
 ];
 
+
 const REASONS  = ["개인사유","병가","공가","기타"];
 const ROLES    = ["부장","차장","과장","대리","주임"];
 const JISAS    = ["본사","수도권북부","수도권남부","중부지사","남부지사"];
